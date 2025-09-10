@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -26,6 +27,7 @@ type HostnameConflict struct {
 func main() {
 	timeout := flag.Duration("timeout", 5*time.Second, "Discovery timeout duration (e.g., 10s, 30s, 1m)")
 	verboseFlag := flag.Bool("verbose", false, "Enable verbose logging")
+	metricsPath := flag.String("write-metrics", "", "Write conflict count as Prometheus gauge to '-' for stdout or a file path")
 	flag.Parse()
 
 	if *verboseFlag {
@@ -42,6 +44,24 @@ func main() {
 	hostnameConflicts, err := scanBonjourConflicts(ctx)
 	if err != nil {
 		slog.Error("failed to scan for conflicts", "error", err)
+		return
+	}
+
+	if *metricsPath != "" {
+		count := 0
+		for _, numbers := range hostnameConflicts {
+			count += len(numbers)
+		}
+
+		metrics := fmt.Sprintf("# HELP bugjour_conflicts Total Bonjour hostname conflicts\n# TYPE bugjour_conflicts gauge\nbugjour_conflicts %d\n", count)
+
+		if *metricsPath == "-" {
+			fmt.Print(metrics)
+		} else {
+			if err := os.WriteFile(*metricsPath, []byte(metrics), 0644); err != nil {
+				slog.Error("failed to write metrics", "error", err)
+			}
+		}
 		return
 	}
 
