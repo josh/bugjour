@@ -54,9 +54,12 @@ func main() {
 		sumConflicts := 0
 
 		for _, numbers := range hostnameConflicts {
-			conflicts := len(numbers)
-			if _, ok := numbers[0]; ok {
-				conflicts--
+			conflicts := 0
+			for num := range numbers {
+				if num == 0 {
+					continue
+				}
+				conflicts += num
 			}
 			sumConflicts += conflicts
 			for i, bound := range bucketBounds {
