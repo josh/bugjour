@@ -48,12 +48,31 @@ func main() {
 	}
 
 	if *metricsPath != "" {
-		count := 0
+		hostCount := len(hostnameConflicts)
+		bucketBounds := []int{0, 1, 3, 5, 10, 100}
+		bucketCounts := make([]int, len(bucketBounds))
+		sumConflicts := 0
+
 		for _, numbers := range hostnameConflicts {
-			count += len(numbers)
+			conflicts := len(numbers)
+			if _, ok := numbers[0]; ok {
+				conflicts--
+			}
+			sumConflicts += conflicts
+			for i, bound := range bucketBounds {
+				if conflicts <= bound {
+					bucketCounts[i]++
+				}
+			}
 		}
 
-		metrics := fmt.Sprintf("# HELP bugjour_conflicts Total Bonjour hostname conflicts\n# TYPE bugjour_conflicts gauge\nbugjour_conflicts %d\n", count)
+		metrics := "# HELP bugjour_conflicts Bonjour hostname conflicts\n# TYPE bugjour_conflicts histogram\n"
+		for i, bound := range bucketBounds {
+			metrics += fmt.Sprintf("bugjour_conflicts_bucket{le=\"%d\"} %d\n", bound, bucketCounts[i])
+		}
+		metrics += fmt.Sprintf("bugjour_conflicts_bucket{le=\"+Inf\"} %d\n", hostCount)
+		metrics += fmt.Sprintf("bugjour_conflicts_sum %d\n", sumConflicts)
+		metrics += fmt.Sprintf("bugjour_conflicts_count %d\n", hostCount)
 
 		if *metricsPath == "-" {
 			fmt.Print(metrics)
