@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	version  = "0.0.0"
 	mdnsAddr = "224.0.0.251:5353"
 )
 
@@ -25,10 +26,16 @@ type HostnameConflict struct {
 }
 
 func main() {
+	versionFlag := flag.Bool("version", false, "Print version and exit")
 	timeout := flag.Duration("timeout", 5*time.Second, "Discovery timeout duration (e.g., 10s, 30s, 1m)")
 	verboseFlag := flag.Bool("verbose", false, "Enable verbose logging")
 	metricsPath := flag.String("write-metrics", "", "Write conflict count as Prometheus gauge to '-' for stdout or a file path")
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println(version)
+		return
+	}
 
 	if *verboseFlag {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
