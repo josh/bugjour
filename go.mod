@@ -1,6 +1,6 @@
 module github.com/josh/bugjour
 
-go 1.24.6
+go 1.25.5
 
 require github.com/miekg/dns v1.1.68
 
